@@ -12,7 +12,6 @@ namespace ATA.EMMExemptions
         private static string _errorEmailTitle = "Error on Airlines.org";
         private static string _errorEmailFromAddress = "errors@Fuels.airlines.org";
         private static string _EmailToAddress = "IT@airlines.org";
-        private static string _EmailFromAddress = "errors@Fuels.airlines.org";
         private static string _errorEmailTitle0 = "Your exemption has expired!";
         private static string _errorEmailTitle30 = "Exemption will expire in 30 days!";
         private static string _errorEmailTitle60 = "Exemption will expire in 60 days!";
@@ -51,7 +50,9 @@ namespace ATA.EMMExemptions
                 if (!string.IsNullOrEmpty(ErrorEmailer._bccEmail))
                     message.CC.Add(new MailAddress(ErrorEmailer._bccEmail));
                 message.IsBodyHtml = false;
-                message.To.Add(ErrorEmailer._EmailToAddress);
+                if (!string.IsNullOrEmpty(ErrorEmailer._EmailToAddress))
+                    message.To.Add(ErrorEmailer._EmailToAddress);
+
                 switch (days)
                 {
                     case 0:

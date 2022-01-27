@@ -1,6 +1,7 @@
 ﻿using Microsoft.SharePoint.Client;
 using System;
 using System.Configuration;
+using System.Globalization;
 using System.Net;
 
 namespace ATA.EMMExemptions
@@ -18,20 +19,21 @@ namespace ATA.EMMExemptions
 
         private static void readExemptionsList(OutputLog log)
         {
-            string appSetting1 = ConfigurationManager.AppSettings["ATAEMMExemptionSiteURL"];
-            string appSetting2 = ConfigurationManager.AppSettings["ATAEMMExemptionListName"];
+            string AppSetting1 = ConfigurationManager.AppSettings["ATAEMMExemptionSiteURL"];
+            string AppSetting2 = ConfigurationManager.AppSettings["ATAEMMExemptionListName"];
             string Username = ConfigurationManager.AppSettings["ATAMembersSiteUrlUser"];
             string Password = ConfigurationManager.AppSettings["ATAMembersSiteUrlPassword"];
+            string MailUrl = "\""+ConfigurationManager.AppSettings["MailUrl"]+"\"";
             int num1 = 0;
             try
             {
-                using (ClientContext clientContext = new ClientContext(appSetting1))
+                using (ClientContext clientContext = new ClientContext(AppSetting1))
                 {
                     System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Ssl3;
 
                     clientContext.Credentials = new NetworkCredential(Username, Password);
                     clientContext.ExecutingWebRequest += new EventHandler<WebRequestEventArgs>(clientContext_ExecutingWebRequest);
-                    List spList = clientContext.Web.Lists.GetByTitle(appSetting2);
+                    List spList = clientContext.Web.Lists.GetByTitle(AppSetting2);
                     var query = new CamlQuery()
                     {
                         ViewXml = "<OrderBy><FieldRef Name='Title' Ascending='FALSE' /></OrderBy><FieldRef Name='ID'/></IsNotNull></Where></Query></View>"
@@ -42,8 +44,7 @@ namespace ATA.EMMExemptions
 
                     foreach (var item in results)
                     {
-                        DateTime result1;
-                        DateTime.TryParse(Program.EnsureTextValue(item, "Expiration_x0020_Date0", log), out result1);
+                        DateTime.TryParse(Program.EnsureTextValue(item, "Expiration_x0020_Date0", log), out DateTime result1);
                         string str1 = Program.EnsureTextValue(item, "Archive_x0020_Status", log);
                         string str2 = Program.EnsureTextValue(item, "Document_x0020_Type", log);
                         string str3 = Program.EnsureTextValue(item, "Title", log);
@@ -88,21 +89,20 @@ namespace ATA.EMMExemptions
                             object[] objArray1 = new object[10];
                             objArray1[0] = (object)"totaldays";
                             object[] objArray2 = objArray1;
-                            timeSpan = result1 - DateTime.Now;
                             string str6 = timeSpan.TotalDays.ToString();
-                            objArray2[1] = (object)str6;
-                            objArray1[2] = (object)" Days: ";
-                            objArray1[3] = (object)result2;
-                            objArray1[4] = (object)"Archive Status: ";
-                            objArray1[5] = (object)Program.EnsureTextValue(item, "Archive_x0020_Status", log);
-                            objArray1[6] = (object)"Document_x0020_Type: ";
-                            objArray1[7] = (object)Program.EnsureTextValue(item, "Document_x0020_Type", log);
-                            objArray1[8] = (object)"Expiration Date :";
-                            objArray1[9] = (object)Program.EnsureTextValue(item, "Expiration_x0020_Date0", log);
+                            objArray2[1] = str6;
+                            objArray1[2] = " Days: ";
+                            objArray1[3] = result2;
+                            objArray1[4] = "Archive Status: ";
+                            objArray1[5] = Program.EnsureTextValue(item, "Archive_x0020_Status", log);
+                            objArray1[6] = "Document_x0020_Type: ";
+                            objArray1[7] = Program.EnsureTextValue(item, "Document_x0020_Type", log);
+                            objArray1[8] = "Expiration Date :";
+                            objArray1[9] = Program.EnsureTextValue(item, "Expiration_x0020_Date0", log);
                             string str7 = string.Format(string.Concat(objArray1));
                             string info = "DocumentType.Contains('Exemption')" + str5 + str7;
                             outputLog.LogInfo(info);
-                            string Body = "This is an automatically generated notice the Exemption " + str3 + " - " + str4 + " Expires on " + (object)result1 + "<br /><br /><a href=\"https://portal.airlines.org/os/emmc/Regulatory Exemptions/Forms/Current.aspx\">Link to Member Portal Regulatory Exemptions</a>";
+                            string Body = "This is an automatically generated notice the Exemption " + str3 + " - " + str4 + " Expires on " + result1.ToString("MM/dd/yyyy", CultureInfo.InvariantCulture) + "<br /><br /><a href="+ MailUrl+"> Link to Member Portal Regulatory Exemptions</a>";
                             num1 = 4;
                             if (str1 == "No" && str2.Contains("Exemption"))
                             {
